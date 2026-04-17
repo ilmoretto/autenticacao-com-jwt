@@ -1,2 +1,13 @@
 .env
 node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.bak
+node_modules/
