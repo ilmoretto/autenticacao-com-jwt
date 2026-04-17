@@ -1,29 +1,27 @@
 import { users } from '../data/users.mock.js';
 import { generateAccessToken } from '../services/token.service.js';
 import {
-    generateRefreshToken,
-    saveRefreshToken,
-    findValidRefreshToken,
-    revokeRefreshToken
+  generateRefreshToken,
+  saveRefreshToken,
+  findValidRefreshToken,
+  revokeRefreshToken
 } from '../services/refresh-token.service.js';
+import { AppError } from '../utils/app-error.js';
 
-export function login(req, res) {
+export function login(req, res, next) {
+  try {
     const { username, password } = req.body;
 
     if (!username || !password) {
-        return res.status(400).json({
-            error: 'Usuário e senha são obrigatórios.'
-        });
+      throw new AppError('Usuário e senha são obrigatórios.', 400);
     }
 
     const user = users.find(
-        (item) => item.username === username && item.password === password
+      (item) => item.username === username && item.password === password
     );
 
     if (!user) {
-        return res.status(401).json({
-            error: 'Credenciais inválidas.'
-        });
+      throw new AppError('Credenciais inválidas.', 401);
     }
 
     const accessToken = generateAccessToken(user);
@@ -32,40 +30,38 @@ export function login(req, res) {
     saveRefreshToken(refreshToken, user.id);
 
     return res.status(200).json({
-        message: 'Login realizado com sucesso.',
-        accessToken,
-        refreshToken,
-        user: {
-            id: user.id,
-            nome: user.nome,
-            role: user.role
-        }
+      message: 'Login realizado com sucesso.',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        nome: user.nome,
+        role: user.role
+      }
     });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export function refresh(req, res) {
+export function refresh(req, res, next) {
+  try {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-        return res.status(400).json({
-            error: 'Refresh token é obrigatório.'
-        });
+      throw new AppError('Refresh token é obrigatório.', 400);
     }
 
     const storedToken = findValidRefreshToken(refreshToken);
 
     if (!storedToken) {
-        return res.status(401).json({
-            error: 'Refresh token inválido, expirado ou revogado.'
-        });
+      throw new AppError('Refresh token inválido, expirado ou revogado.', 401);
     }
 
     const user = users.find((item) => item.id === storedToken.userId);
 
     if (!user) {
-        return res.status(401).json({
-            error: 'Usuário não encontrado.'
-        });
+      throw new AppError('Usuário não encontrado.', 401);
     }
 
     revokeRefreshToken(refreshToken);
@@ -76,30 +72,33 @@ export function refresh(req, res) {
     saveRefreshToken(newRefreshToken, user.id);
 
     return res.status(200).json({
-        message: 'Token renovado com sucesso.',
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken
+      message: 'Token renovado com sucesso.',
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
     });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export function logout(req, res) {
+export function logout(req, res, next) {
+  try {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-        return res.status(400).json({
-            error: 'Refresh token é obrigatório.'
-        });
+      throw new AppError('Refresh token é obrigatório.', 400);
     }
 
     const revokedToken = revokeRefreshToken(refreshToken);
 
     if (!revokedToken) {
-        return res.status(404).json({
-            error: 'Refresh token não encontrado.'
-        });
+      throw new AppError('Refresh token não encontrado.', 404);
     }
 
     return res.status(200).json({
-        message: 'Logout realizado com sucesso.'
+      message: 'Logout realizado com sucesso.'
     });
+  } catch (error) {
+    next(error);
+  }
 }

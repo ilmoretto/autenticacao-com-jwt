@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import authRoutes from './routes/auth.routes.js';
 import protectedRoutes from './routes/protected.routes.js';
+import { notFoundHandler, errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
 
@@ -24,10 +25,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', protectedRoutes);
 
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Rota não encontrada'
-  });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
